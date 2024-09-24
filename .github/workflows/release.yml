@@ -1,0 +1,27 @@
+name: Plugin-Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "frontend-v*"
+      - "v*"
+
+jobs:
+  build_static:
+    uses: ministruth/.github/.github/workflows/build_static.yml@main
+    with:
+      upload: true
+
+  build_plugin:
+    uses: ministruth/.github/.github/workflows/build.yml@main
+    with:
+      prefix: plugin
+      upload: true
+
+  release:
+    needs: [build_static, build_plugin]
+    uses: ministruth/.github/.github/workflows/release.yml@main
+    with:
+      prefix: plugin
+      static: true
