@@ -3435,6 +3435,8 @@ dependencies = [
 [[package]]
 name = "skynet_api_task"
 version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a73b3aa0e6f6b8083ff9fb4152439d1cb588f70d5edb8de0a38be7a24f139382"
 dependencies = [
  "serde",
  "skynet_api",
