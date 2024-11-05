@@ -18,7 +18,7 @@ use skynet_api::{
     sea_orm::{DatabaseConnection, TransactionTrait},
     uuid, HyUuid, MenuItem, Result, Skynet,
 };
-use skynet_api_task::ID;
+use skynet_api_task::{ID, VERSION};
 
 mod api;
 mod migration;
@@ -72,6 +72,9 @@ impl Plugin for Task {
         );
         state.locale = state.locale.add_locale(i18n!("locales"));
         let _ = SERVICE.set(Arc::new(srv));
+        skynet
+            .shared_api
+            .set(&ID, VERSION, Box::new(SERVICE.get().unwrap().to_owned()));
         (skynet, state, Ok(()))
     }
 
