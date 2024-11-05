@@ -4,23 +4,19 @@ use std::{
     sync::{Arc, OnceLock},
 };
 
+use actix_cloud::{
+    self, actix_web::http::Method, async_trait, i18n::i18n, router::CSRFType, state::GlobalState,
+    tokio::runtime::Runtime,
+};
 use migration::migrator::Migrator;
+use parking_lot::lock_api::RwLock;
 use skynet_api::{
-    actix_cloud::{
-        self,
-        actix_web::web::{delete, get, post},
-        i18n::i18n,
-        router::{CSRFType, Router},
-        state::GlobalState,
-        tokio::runtime::Runtime,
-    },
-    async_trait, create_plugin,
-    parking_lot::lock_api::RwLock,
-    permission::{IDTypes::PermManagePluginID, PermEntry, PERM_READ, PERM_WRITE},
+    create_plugin,
+    permission::{IDTypes::PermManagePluginID, PermEntry, PermType, PERM_READ, PERM_WRITE},
     plugin::{self, Plugin},
-    request::{MenuItem, PermType},
+    request::{box_json_router, Router},
     sea_orm::{DatabaseConnection, TransactionTrait},
-    uuid, HyUuid, Result, Skynet,
+    uuid, HyUuid, MenuItem, Result, Skynet,
 };
 use skynet_api_task::ID;
 
@@ -41,9 +37,9 @@ impl Plugin for Task {
     fn on_load(
         &self,
         _: PathBuf,
-        mut skynet: Skynet,
-        mut state: GlobalState,
-    ) -> (Skynet, GlobalState, Result<()>) {
+        mut skynet: Box<Skynet>,
+        mut state: Box<GlobalState>,
+    ) -> (Box<Skynet>, Box<GlobalState>, Result<()>) {
         RUNTIME.set(Runtime::new().unwrap()).unwrap();
         let srv = service::Service {
             killer_tx: RwLock::new(HashMap::new()),
@@ -84,42 +80,42 @@ impl Plugin for Task {
         r.extend(vec![
             Router {
                 path: format!("/plugins/{ID}/tasks"),
-                route: get().to(api::get_all),
+                method: Method::GET,
+                route: box_json_router(api::get_all),
                 checker: PermType::Entry(PermEntry {
                     pid: skynet.default_id[PermManagePluginID],
                     perm: PERM_READ,
-                })
-                .into(),
+                }),
                 csrf,
             },
             Router {
                 path: format!("/plugins/{ID}/tasks"),
-                route: delete().to(api::delete_completed),
+                method: Method::DELETE,
+                route: box_json_router(api::delete_completed),
                 checker: PermType::Entry(PermEntry {
                     pid: skynet.default_id[PermManagePluginID],
                     perm: PERM_WRITE,
-                })
-                .into(),
+                }),
                 csrf,
             },
             Router {
                 path: format!("/plugins/{ID}/tasks/{{tid}}/output"),
-                route: get().to(api::get_output),
+                method: Method::GET,
+                route: box_json_router(api::get_output),
                 checker: PermType::Entry(PermEntry {
                     pid: skynet.default_id[PermManagePluginID],
                     perm: PERM_READ,
-                })
-                .into(),
+                }),
                 csrf,
             },
             Router {
                 path: format!("/plugins/{ID}/tasks/{{tid}}/stop"),
-                route: post().to(api::stop),
+                method: Method::POST,
+                route: box_json_router(api::stop),
                 checker: PermType::Entry(PermEntry {
                     pid: skynet.default_id[PermManagePluginID],
                     perm: PERM_WRITE,
-                })
-                .into(),
+                }),
                 csrf,
             },
         ]);

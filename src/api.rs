@@ -1,15 +1,15 @@
+use actix_cloud::{
+    actix_web::web::Path,
+    response::{JsonResponse, RspResult},
+    tracing::{info, Instrument},
+};
 use actix_web_validator::QsQuery;
 use serde::{Deserialize, Serialize};
 use serde_inline_default::serde_inline_default;
 use skynet_api::{
-    actix_cloud::{
-        actix_web::{web::Path, Responder},
-        response::{JsonResponse, RspResult},
-    },
     finish,
     request::{Condition, IntoExpr, PageData, PaginationParam, TimeParam},
     sea_orm::{ColumnTrait, IntoSimpleExpr, TransactionTrait},
-    tracing::{info, Instrument},
     HyUuid,
 };
 use skynet_api_task::{entity::tasks, Service, ID};
@@ -32,7 +32,7 @@ pub struct GetTasksReq {
 }
 
 #[plugin_api(RUNTIME)]
-pub async fn get_all(param: QsQuery<GetTasksReq>) -> RspResult<impl Responder> {
+pub async fn get_all(param: QsQuery<GetTasksReq>) -> RspResult<JsonResponse> {
     let srv = SERVICE.get().unwrap();
     let mut cond = param.common_cond();
     if let Some(text) = &param.text {
@@ -62,7 +62,7 @@ pub struct GetOutputReq {
 pub async fn get_output(
     tid: Path<HyUuid>,
     param: QsQuery<GetOutputReq>,
-) -> RspResult<impl Responder> {
+) -> RspResult<JsonResponse> {
     #[derive(Serialize)]
     struct Rsp {
         output: String,
@@ -89,7 +89,7 @@ pub async fn get_output(
 }
 
 #[plugin_api(RUNTIME)]
-pub async fn delete_completed() -> RspResult<impl Responder> {
+pub async fn delete_completed() -> RspResult<JsonResponse> {
     let tx = DB.get().unwrap().begin().await?;
     let cnt = SERVICE.get().unwrap().delete_completed(&tx).await?;
     tx.commit().await?;
@@ -98,7 +98,7 @@ pub async fn delete_completed() -> RspResult<impl Responder> {
 }
 
 #[plugin_api(RUNTIME)]
-pub async fn stop(tid: Path<HyUuid>) -> RspResult<impl Responder> {
+pub async fn stop(tid: Path<HyUuid>) -> RspResult<JsonResponse> {
     let srv = SERVICE.get().unwrap();
     if let Some(tx) = srv.killer_tx.write().remove(&tid) {
         let _ = tx.send(());

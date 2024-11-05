@@ -1,11 +1,9 @@
 use crate::migration::m20240101_000001_create_table;
+use actix_cloud::async_trait;
 use sea_orm_migration::{MigrationTrait, MigratorTrait};
-use skynet_api::{
-    async_trait,
-    sea_orm::{
-        sea_query::{types, Alias, IntoIden},
-        DynIden,
-    },
+use skynet_api::sea_orm::{
+    sea_query::{types, Alias, IntoIden},
+    DynIden,
 };
 use skynet_api_task::ID;
 
