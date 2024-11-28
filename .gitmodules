@@ -1,3 +1,3 @@
-[submodule "frontend/src/common"]
-path = frontend/src/common
-url = https://github.com/ministruth/plugin-common.git
+[submodule "task/frontend/src/common"]
+	path = task/frontend/src/common
+	url = https://github.com/ministruth/plugin_common.git

@@ -1,22 +1,23 @@
 use actix_cloud::{
-    actix_web::web::Path,
+    actix_web::web::{Data, Path},
     response::{JsonResponse, RspResult},
-    tracing::{info, Instrument},
+    tracing::info,
 };
 use actix_web_validator::QsQuery;
 use serde::{Deserialize, Serialize};
 use serde_inline_default::serde_inline_default;
 use skynet_api::{
+    ffi_rpc::registry::Registry,
     finish,
     request::{Condition, IntoExpr, PageData, PaginationParam, TimeParam},
-    sea_orm::{ColumnTrait, IntoSimpleExpr, TransactionTrait},
+    sea_orm::{ColumnTrait, IntoSimpleExpr},
     HyUuid,
 };
-use skynet_api_task::{entity::tasks, Service, ID};
-use skynet_macro::{common_req, plugin_api};
+use skynet_api_task::{entity::tasks, viewer::tasks::TaskViewer, Service};
+use skynet_macro::common_req;
 use validator::Validate;
 
-use crate::{TaskResponse, DB, RUNTIME, SERVICE};
+use crate::{TaskResponse, PLUGIN_INSTANCE};
 
 #[common_req(tasks::Column)]
 #[derive(Debug, Validate, Deserialize)]
@@ -31,9 +32,7 @@ pub struct GetTasksReq {
     pub time: TimeParam,
 }
 
-#[plugin_api(RUNTIME)]
 pub async fn get_all(param: QsQuery<GetTasksReq>) -> RspResult<JsonResponse> {
-    let srv = SERVICE.get().unwrap();
     let mut cond = param.common_cond();
     if let Some(text) = &param.text {
         cond = cond.add(
@@ -44,9 +43,7 @@ pub async fn get_all(param: QsQuery<GetTasksReq>) -> RspResult<JsonResponse> {
                 .add(text.like_expr(tasks::Column::Output)),
         );
     }
-    let tx = DB.get().unwrap().begin().await?;
-    let data = srv.find(&tx, cond).await?;
-    tx.commit().await?;
+    let data = TaskViewer::find(PLUGIN_INSTANCE.db.get().unwrap(), cond).await?;
     finish!(JsonResponse::new(TaskResponse::Success).json(PageData::new(data)));
 }
 
@@ -58,7 +55,6 @@ pub struct GetOutputReq {
     pub pos: usize,
 }
 
-#[plugin_api(RUNTIME)]
 pub async fn get_output(
     tid: Path<HyUuid>,
     param: QsQuery<GetOutputReq>,
@@ -68,14 +64,11 @@ pub async fn get_output(
         output: String,
         pos: usize,
     }
-    let srv = SERVICE.get().unwrap();
-    let tx = DB.get().unwrap().begin().await?;
-    let t = match srv.find_by_id(&tx, &tid).await? {
+    let t = match TaskViewer::find_by_id(PLUGIN_INSTANCE.db.get().unwrap(), &tid).await? {
         Some(t) => t.output,
         None => finish!(JsonResponse::not_found()),
     }
     .unwrap_or_default();
-    tx.commit().await?;
 
     let t = if param.pos < t.len() {
         &t[param.pos..]
@@ -88,24 +81,16 @@ pub async fn get_output(
     }));
 }
 
-#[plugin_api(RUNTIME)]
 pub async fn delete_completed() -> RspResult<JsonResponse> {
-    let tx = DB.get().unwrap().begin().await?;
-    let cnt = SERVICE.get().unwrap().delete_completed(&tx).await?;
-    tx.commit().await?;
-    info!(success = true, plugin = %ID, "Delete all tasks");
+    let cnt = TaskViewer::delete_completed(PLUGIN_INSTANCE.db.get().unwrap()).await?;
+    info!(success = true, "Delete all tasks");
     finish!(JsonResponse::new(TaskResponse::Success).json(cnt));
 }
 
-#[plugin_api(RUNTIME)]
-pub async fn stop(tid: Path<HyUuid>) -> RspResult<JsonResponse> {
-    let srv = SERVICE.get().unwrap();
-    if let Some(tx) = srv.killer_tx.write().remove(&tid) {
-        let _ = tx.send(());
-    } else {
+pub async fn stop(tid: Path<HyUuid>, reg: Data<Registry>) -> RspResult<JsonResponse> {
+    if !PLUGIN_INSTANCE.stop(&reg, *tid).await {
         finish!(JsonResponse::not_found());
     }
-
-    info!(success = true, plugin = %ID, id = %tid, "Stop task");
+    info!(success = true, id = %tid, "Stop task");
     finish!(JsonResponse::new(TaskResponse::Success));
 }

@@ -1,0 +1,27 @@
+[package]
+name = "skynet_api_task"
+version = "0.4.0"
+edition = "2021"
+authors = ["MXWXZ <matrixwxz@gmail.com>"]
+description = "API for Skynet task plugin."
+license = "GPL-3.0"
+repository = "https://github.com/ministruth/task"
+keywords = ["framework", "api", "ffi", "plugin"]
+categories = ["api-bindings", "external-ffi-bindings"]
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+ffi_rpc = "0.5"
+semver = { version = "1.0", features = ["serde"] }
+
+actix-cloud = { version = "0.4", default-features = false, features = [
+    "macros",
+    "seaorm",
+    "chrono",
+] }
+skynet_api = { version = "0.3", features = [
+    "service-result",
+    "request-condition",
+    "database",
+] }
+skynet_macro = "0.3"

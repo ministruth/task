@@ -1,37 +1,4 @@
-[package]
-name = "task"
-version = "0.3.0"
-edition = "2021"
-authors = ["MXWXZ <matrixwxz@gmail.com>"]
-
-[dependencies]
-parking_lot = "0.12"
-serde = { version = "1.0", features = ["derive"] }
-serde-inline-default = "0.2"
-actix-web-validator = "6.0"
-validator = { version = "0.18", features = ["derive"] }
-
-actix-cloud = { version = "0.4", default-features = false, features = [
-    "traceid",
-    "i18n",
-] }
-skynet_api_task = "0.3"
-skynet_api = { version = "0.2", features = ["plugin"] }
-skynet_macro = "0.2"
-sea-orm-migration = { version = "1.1", features = [
-    "sqlx-sqlite",
-    "sqlx-postgres",
-    "sqlx-mysql",
-    "runtime-tokio-rustls",
-] }
-
-[lib]
-crate-type = ["cdylib"]
-
-[build-dependencies]
-
-actix-cloud = { version = "0.4.3", default-features = false, features = [
-    "response-build",
-] }
-
 [workspace]
+
+members = ["task_api", "task"]
+resolver = "2"
