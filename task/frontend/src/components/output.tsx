@@ -17,13 +17,13 @@ const TaskOutput: React.FC<TaskOutputProps> = (props) => {
     <>
       <TableBtn
         icon={ProfileOutlined}
-        tip={intl.get('pages.task.op.output.tip')}
+        tip={intl.get('pages.task.output.tip')}
         perm={UserPerm.PermRead}
         permName="manage.plugin"
         onClick={() => setIsModalOpen(true)}
       />
       <Modal
-        title={intl.get('pages.task.op.output.title')}
+        title={intl.get('pages.task.output.title')}
         open={isModalOpen}
         footer={null}
         onCancel={() => {

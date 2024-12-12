@@ -1,3 +1,6 @@
+# v0.5.0
+1. Update `skynet_api` version.
+
 # v0.4.0
 ## Changes
 1. Fit the new architecture.

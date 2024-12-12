@@ -73,7 +73,7 @@ impl skynet_api::plugin::api::PluginApi for Plugin {
                 MenuItem {
                     id: HyUuid(uuid!("ee689b2e-beaa-43ac-837d-466cad5ff999")),
                     plugin: Some(ID),
-                    name: format!("{ID}.menu.task"),
+                    name: String::from("menu.task"),
                     path: format!("/plugin/{ID}/"),
                     checker: PermChecker::new_entry(
                         skynet.default_id[PermManagePluginID],

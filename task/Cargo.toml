@@ -1,6 +1,6 @@
 [package]
 name = "task"
-version = "0.4.0"
+version = "0.5.0"
 edition = "2021"
 authors = ["MXWXZ <matrixwxz@gmail.com>"]
 
@@ -18,8 +18,8 @@ actix-cloud = { version = "0.4", default-features = false, features = [
     "state",
     "response-json",
 ] }
-skynet_api_task = { version = "0.4", path = "../task_api" }
-skynet_api = { version = "0.3", features = [
+skynet_api_task = { version = "0.5", path = "../task_api" }
+skynet_api = { version = "0.4", features = [
     "plugin-api",
     "request-param",
     "service-skynet",

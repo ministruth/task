@@ -60,7 +60,7 @@ const handleDeleteAll = async (
   ref: React.MutableRefObject<ActionType | undefined>,
 ) => {
   confirm({
-    title: intl.get('pages.task.op.deleteall.title'),
+    title: intl.get('pages.task.deleteall.title'),
     content: intl.get('app.confirm'),
     onOk() {
       return new Promise((resolve, reject) => {
@@ -85,7 +85,7 @@ const handleStop = (
   name: string,
 ) => {
   confirm({
-    title: intl.get('pages.task.op.stop.title', {
+    title: intl.get('pages.task.stop.title', {
       name: name,
     }),
     content: intl.get('app.confirm'),
@@ -123,19 +123,19 @@ const TaskCard = () => {
     SearchColumn(intl),
     IDColumn(intl),
     {
-      title: intl.get('pages.task.table.name'),
+      title: intl.get('tables.name'),
       dataIndex: 'name',
       align: 'center',
       hideInSearch: true,
     },
     {
-      title: intl.get('pages.task.table.result'),
+      title: intl.get('tables.result'),
       dataIndex: 'result',
       align: 'center',
       hideInSearch: true,
     },
     {
-      title: intl.get('pages.task.table.percent'),
+      title: intl.get('tables.percent'),
       valueType: (item) => ({
         type: 'progress',
         status: getStatus(item),
@@ -158,7 +158,7 @@ const TaskCard = () => {
           <TableBtn
             key="stop"
             icon={StopOutlined}
-            tip={intl.get('pages.task.op.stop.tip')}
+            tip={intl.get('pages.task.stop.tip')}
             color="#ff4d4f"
             perm={UserPerm.PermWrite}
             permName="manage.plugin"
