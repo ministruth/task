@@ -23,6 +23,7 @@ skynet_api = { version = "0.4", features = [
     "plugin-api",
     "request-param",
     "service-skynet",
+    "viewer",
 ] }
 skynet_macro = "0.3"
 sea-orm-migration = { version = "1.1", features = [

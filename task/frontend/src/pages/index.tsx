@@ -8,7 +8,7 @@ const IndexPage = () => {
   return (
     <MainLayout
       title="titles.task"
-      access="manage.plugin"
+      access="manage.4adaf7d3-b877-43c3-82bd-da3689dc3920"
       perm={UserPerm.PermRead}
     >
       <MainContainer

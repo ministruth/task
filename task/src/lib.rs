@@ -1,8 +1,12 @@
-use std::{path::PathBuf, sync::OnceLock};
+use std::{
+    path::PathBuf,
+    sync::{Arc, OnceLock},
+};
 
 use actix_cloud::{
     actix_web::web::Data,
     i18n::{i18n, Locale},
+    memorydb,
     router::CSRFType,
     state::{GlobalState, ServerHandle},
     tokio::runtime::Runtime,
@@ -20,13 +24,15 @@ use skynet_api::{
         },
         registry::Registry,
     },
-    permission::{IDTypes::PermManagePluginID, PermChecker, PERM_READ, PERM_WRITE},
+    permission::{PermChecker, PERM_READ, PERM_WRITE},
     plugin::{PluginStatus, Request, Response},
     request::{Method, Router, RouterType},
     route,
-    sea_orm::DatabaseConnection,
+    sea_orm::{DatabaseConnection, TransactionTrait},
     service::{SResult, Service, SKYNET_SERVICE},
-    uuid, HyUuid, MenuItem, Skynet,
+    uuid,
+    viewer::permissions::PermissionViewer,
+    HyUuid, MenuItem, Skynet,
 };
 use skynet_api_task::{viewer::tasks::TaskViewer, ID};
 
@@ -41,6 +47,7 @@ include!(concat!(env!("OUT_DIR"), "/response.rs"));
     db: Default::default(),
     state: Default::default(),
     runtime: Runtime::new().unwrap(),
+    manage_id: Default::default(),
 })]
 #[plugin_impl_root]
 #[plugin_impl_call(skynet_api::plugin::api::PluginApi, skynet_api_task::Service)]
@@ -49,6 +56,7 @@ struct Plugin {
     db: OnceLock<DatabaseConnection>,
     state: OnceLock<Data<GlobalState>>,
     runtime: Runtime,
+    manage_id: OnceLock<HyUuid>,
 }
 
 #[plugin_impl_trait]
@@ -67,6 +75,14 @@ impl skynet_api::plugin::api::PluginApi for Plugin {
             Migrator::up(&db, None).await?;
             let _ = self.db.set(db);
 
+            let tx = self.db.get().unwrap().begin().await?;
+            let _ = self.manage_id.set(
+                PermissionViewer::find_or_init(&tx, &format!("manage.{ID}"), "plugin task manager")
+                    .await?
+                    .id,
+            );
+            tx.commit().await?;
+
             TaskViewer::clean_running(self.db.get().unwrap()).await?;
 
             let _ = skynet.insert_menu(
@@ -75,10 +91,7 @@ impl skynet_api::plugin::api::PluginApi for Plugin {
                     plugin: Some(ID),
                     name: String::from("menu.task"),
                     path: format!("/plugin/{ID}/"),
-                    checker: PermChecker::new_entry(
-                        skynet.default_id[PermManagePluginID],
-                        PERM_READ,
-                    ),
+                    checker: PermChecker::new_entry(*self.manage_id.get().unwrap(), PERM_READ),
                     ..Default::default()
                 },
                 1,
@@ -86,6 +99,7 @@ impl skynet_api::plugin::api::PluginApi for Plugin {
             );
             let locale = Locale::new(skynet.config.lang.clone()).add_locale(i18n!("locales"));
             let state = GlobalState {
+                memorydb: Arc::new(memorydb::default::DefaultBackend::new()),
                 config: Default::default(),
                 logger: None,
                 locale,
@@ -97,34 +111,35 @@ impl skynet_api::plugin::api::PluginApi for Plugin {
         })
     }
 
-    async fn on_register(&self, _: &Registry, skynet: Skynet, mut r: Vec<Router>) -> Vec<Router> {
+    async fn on_register(&self, _: &Registry, _skynet: Skynet, mut r: Vec<Router>) -> Vec<Router> {
+        let manage_id = *self.manage_id.get().unwrap();
         r.extend(vec![
             Router {
                 path: format!("/plugins/{ID}/tasks"),
                 method: Method::Get,
                 route: RouterType::Http(ID, String::from("api::get_all")),
-                checker: PermChecker::new_entry(skynet.default_id[PermManagePluginID], PERM_READ),
+                checker: PermChecker::new_entry(manage_id, PERM_READ),
                 csrf: CSRFType::Header,
             },
             Router {
                 path: format!("/plugins/{ID}/tasks"),
                 method: Method::Delete,
                 route: RouterType::Http(ID, String::from("api::delete_completed")),
-                checker: PermChecker::new_entry(skynet.default_id[PermManagePluginID], PERM_WRITE),
+                checker: PermChecker::new_entry(manage_id, PERM_WRITE),
                 csrf: CSRFType::Header,
             },
             Router {
                 path: format!("/plugins/{ID}/tasks/{{tid}}/output"),
                 method: Method::Get,
                 route: RouterType::Http(ID, String::from("api::get_output")),
-                checker: PermChecker::new_entry(skynet.default_id[PermManagePluginID], PERM_READ),
+                checker: PermChecker::new_entry(manage_id, PERM_READ),
                 csrf: CSRFType::Header,
             },
             Router {
                 path: format!("/plugins/{ID}/tasks/{{tid}}/stop"),
                 method: Method::Post,
                 route: RouterType::Http(ID, String::from("api::stop")),
-                checker: PermChecker::new_entry(skynet.default_id[PermManagePluginID], PERM_WRITE),
+                checker: PermChecker::new_entry(manage_id, PERM_WRITE),
                 csrf: CSRFType::Header,
             },
         ]);

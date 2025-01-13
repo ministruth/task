@@ -161,7 +161,7 @@ const TaskCard = () => {
             tip={intl.get('pages.task.stop.tip')}
             color="#ff4d4f"
             perm={UserPerm.PermWrite}
-            permName="manage.plugin"
+            permName="manage.4adaf7d3-b877-43c3-82bd-da3689dc3920"
             onClick={() => handleStop(intl, ref, row.id, row.name)}
             disabled={row.result != undefined}
           />,
@@ -184,7 +184,11 @@ const TaskCard = () => {
             danger
             onClick={() => handleDeleteAll(intl, ref)}
             disabled={
-              !checkPerm(access, 'manage.notification', UserPerm.PermWrite)
+              !checkPerm(
+                access,
+                'manage.4adaf7d3-b877-43c3-82bd-da3689dc3920',
+                UserPerm.PermWrite,
+              )
             }
           >
             <FormattedMessage id="app.op.deleteall" />

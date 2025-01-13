@@ -1,5 +1,5 @@
 import TableBtn from '@/common_components/layout/table/tableBtn';
-import { getIntl, UserPerm } from '@/utils';
+import { getIntl } from '@/utils';
 import { ProfileOutlined } from '@ant-design/icons';
 import { Modal } from 'antd';
 import { useState } from 'react';
@@ -18,8 +18,6 @@ const TaskOutput: React.FC<TaskOutputProps> = (props) => {
       <TableBtn
         icon={ProfileOutlined}
         tip={intl.get('pages.task.output.tip')}
-        perm={UserPerm.PermRead}
-        permName="manage.plugin"
         onClick={() => setIsModalOpen(true)}
       />
       <Modal
