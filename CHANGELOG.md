@@ -1,4 +1,8 @@
-# dev
+# v0.5.1
+## Changes
+1. Dedicated manage permission.
+
+# frontend-v0.1.2
 ## Changes
 1. Dedicated manage permission.
 
