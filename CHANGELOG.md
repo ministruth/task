@@ -1,3 +1,7 @@
+# v0.6.0
+## Changes
+1. Update `skynet_api` version.
+
 # v0.5.1
 ## Changes
 1. Dedicated manage permission.
