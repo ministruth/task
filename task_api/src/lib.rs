@@ -3,7 +3,7 @@ use ffi_rpc::{
     ffi_rpc_macro::{self, plugin_api},
 };
 use semver::Version;
-use skynet_api::{service::SResult, uuid, HyUuid, Result};
+use skynet_api::{HyUuid, Result, service::SResult, uuid};
 
 pub use semver;
 pub mod entity;

@@ -1,12 +1,12 @@
 use skynet_api::{
+    HyUuid,
     ffi_rpc::{self, async_trait, bincode, ffi_rpc_macro::plugin_impl_trait, registry::Registry},
     sea_orm::{ActiveModelTrait, Set},
     service::SResult,
-    HyUuid,
 };
-use skynet_api_task::{entity::tasks, semver::Version, TaskCallback};
+use skynet_api_task::{TaskCallback, entity::tasks, semver::Version};
 
-use crate::{Plugin, PLUGIN_INSTANCE};
+use crate::{PLUGIN_INSTANCE, Plugin};
 
 #[plugin_impl_trait]
 impl skynet_api_task::Service for Plugin {

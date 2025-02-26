@@ -5,7 +5,7 @@ use std::{
 
 use actix_cloud::{
     actix_web::web::Data,
-    i18n::{i18n, Locale},
+    i18n::{Locale, i18n},
     memorydb,
     router::CSRFType,
     state::{GlobalState, ServerHandle},
@@ -15,6 +15,7 @@ use dashmap::DashMap;
 use migration::migrator::Migrator;
 use sea_orm_migration::MigratorTrait;
 use skynet_api::{
+    HyUuid, MenuItem, Skynet,
     ffi_rpc::{
         self,
         abi_stable::prefix_type::PrefixTypeTrait,
@@ -24,17 +25,16 @@ use skynet_api::{
         },
         registry::Registry,
     },
-    permission::{PermChecker, PERM_READ, PERM_WRITE},
+    permission::{PERM_READ, PERM_WRITE, PermChecker},
     plugin::{PluginStatus, Request, Response},
     request::{Method, Router, RouterType},
     route,
     sea_orm::{DatabaseConnection, TransactionTrait},
-    service::{SResult, Service, SKYNET_SERVICE},
+    service::{SKYNET_SERVICE, SResult, Service},
     uuid,
     viewer::permissions::PermissionViewer,
-    HyUuid, MenuItem, Skynet,
 };
-use skynet_api_task::{viewer::tasks::TaskViewer, ID};
+use skynet_api_task::{ID, viewer::tasks::TaskViewer};
 
 mod api;
 mod migration;
