@@ -1,7 +1,9 @@
 import MainLayout from '@/common_components/layout';
 import MainContainer from '@/common_components/layout/container';
-import TaskCard from '@/components/card';
+import ScriptCard from '@/components/script_card';
+import TaskCard from '@/components/task_card';
 import { UserPerm, getIntl } from '@/utils';
+import { ProCard } from '@ant-design/pro-components';
 
 const IndexPage = () => {
   const intl = getIntl();
@@ -23,7 +25,24 @@ const IndexPage = () => {
         ]}
         content={intl.get('pages.task.content')}
       >
-        <TaskCard />
+        <ProCard
+          tabs={{
+            type: 'card',
+            items: [
+              {
+                key: 'task',
+                label: intl.get('pages.task.title'),
+                children: <TaskCard />,
+              },
+              {
+                key: 'script',
+                label: intl.get('pages.script.title'),
+                children: <ScriptCard />,
+              },
+            ],
+          }}
+          bordered
+        />
       </MainContainer>
     </MainLayout>
   );

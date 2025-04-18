@@ -1,3 +1,14 @@
+# frontend-v0.1.4
+## New features
+1. Task script support.
+
+# v0.7.0
+## New features
+1. Task script support.
+
+## Changes
+1. Update `skynet_api` version.
+
 # v0.6.1
 ## Changes
 1. Update rust 2024.

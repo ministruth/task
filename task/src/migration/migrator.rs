@@ -1,18 +1,17 @@
-use crate::migration::m20240101_000001_create_table;
-use actix_cloud::async_trait;
-use sea_orm_migration::{MigrationTrait, MigratorTrait};
-use skynet_api::sea_orm::{
-    DynIden,
-    sea_query::{Alias, IntoIden, types},
-};
+use sea_orm_migration::prelude::*;
+
+use crate::migration::*;
 use skynet_api_task::ID;
 
 pub struct Migrator;
 
-#[async_trait]
+#[async_trait::async_trait]
 impl MigratorTrait for Migrator {
     fn migrations() -> Vec<Box<dyn MigrationTrait>> {
-        vec![Box::new(m20240101_000001_create_table::Migration)]
+        vec![
+            Box::new(m20240101_000001_create_table::Migration),
+            Box::new(m20250301_000001_create_table::Migration),
+        ]
     }
 
     fn migration_table_name() -> DynIden {

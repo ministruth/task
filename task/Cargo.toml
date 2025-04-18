@@ -1,6 +1,6 @@
 [package]
 name = "task"
-version = "0.6.1"
+version = "0.7.0"
 edition = "2024"
 authors = ["MXWXZ <matrixwxz@gmail.com>"]
 
@@ -11,6 +11,7 @@ serde-inline-default = "0.2"
 actix-web-validator = "6.0"
 validator = { version = "0.18", features = ["derive"] }
 abi_stable = "0.11"
+rhai = "1.21"
 
 actix-cloud = { version = "0.4", default-features = false, features = [
     "traceid",
@@ -18,8 +19,8 @@ actix-cloud = { version = "0.4", default-features = false, features = [
     "state",
     "response-json",
 ] }
-skynet_api_task = { version = "0.6", path = "../task_api" }
-skynet_api = { version = "0.5", features = [
+skynet_api_task = { version = "0.7", path = "../task_api" }
+skynet_api = { version = "0.6", features = [
     "plugin-api",
     "request-param",
     "service-skynet",

@@ -1,5 +1,6 @@
 import { defineConfig } from '@umijs/max';
 import { PLUGIN_ID } from './src/config';
+const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
 
 export default defineConfig({
   publicPath:
@@ -11,6 +12,9 @@ export default defineConfig({
   // symlink fix
   chainWebpack(memo, _) {
     memo.resolve.symlinks(false);
+    memo
+      .plugin('monaco-editor-webpack-plugin')
+      .use(MonacoWebpackPlugin, [{ languages: ['rust'] }]);
   },
   access: {
     strictMode: true,

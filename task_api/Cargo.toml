@@ -1,6 +1,6 @@
 [package]
 name = "skynet_api_task"
-version = "0.6.1"
+version = "0.7.0"
 edition = "2024"
 authors = ["MXWXZ <matrixwxz@gmail.com>"]
 description = "API for Skynet task plugin."
@@ -11,15 +11,16 @@ categories = ["api-bindings", "external-ffi-bindings"]
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
-ffi_rpc = "0.5"
+ffi_rpc = "0.6"
 semver = { version = "1.0", features = ["serde"] }
+enum-as-inner = "0.6"
 
 actix-cloud = { version = "0.4", default-features = false, features = [
     "macros",
     "seaorm",
     "chrono",
 ] }
-skynet_api = { version = "0.5", features = [
+skynet_api = { version = "0.6", features = [
     "service-result",
     "request-condition",
     "database",

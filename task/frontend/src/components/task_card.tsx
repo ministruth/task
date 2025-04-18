@@ -21,7 +21,6 @@ import {
   UserPerm,
 } from '@/utils';
 import { StopOutlined } from '@ant-design/icons';
-import ProCard from '@ant-design/pro-card';
 import { ParamsType } from '@ant-design/pro-components';
 import { ActionType, ProColumns } from '@ant-design/pro-table';
 import { useModel } from '@umijs/max';
@@ -171,41 +170,39 @@ const TaskCard = () => {
   ];
 
   return (
-    <ProCard bordered>
-      <Table
-        actionRef={ref}
-        poll
-        rowKey="id"
-        request={request}
-        columns={columns}
-        action={[
-          <Button
-            key="delete"
-            danger
-            onClick={() => handleDeleteAll(intl, ref)}
-            disabled={
-              !checkPerm(
-                access,
-                'manage.4adaf7d3-b877-43c3-82bd-da3689dc3920',
-                UserPerm.PermWrite,
-              )
-            }
-          >
-            <FormattedMessage id="app.op.deleteall" />
-          </Button>,
-        ]}
-        expandable={{
-          expandRowByClick: true,
-          expandedRowRender: (record: any) => {
-            return (
-              <Paragraph>
-                <pre className={custom_styles.detail}>{record.detail}</pre>
-              </Paragraph>
-            );
-          },
-        }}
-      />
-    </ProCard>
+    <Table
+      actionRef={ref}
+      poll
+      rowKey="id"
+      request={request}
+      columns={columns}
+      action={[
+        <Button
+          key="delete"
+          danger
+          onClick={() => handleDeleteAll(intl, ref)}
+          disabled={
+            !checkPerm(
+              access,
+              'manage.4adaf7d3-b877-43c3-82bd-da3689dc3920',
+              UserPerm.PermWrite,
+            )
+          }
+        >
+          <FormattedMessage id="app.op.deleteall" />
+        </Button>,
+      ]}
+      expandable={{
+        expandRowByClick: true,
+        expandedRowRender: (record: any) => {
+          return (
+            <Paragraph>
+              <pre className={custom_styles.detail}>{record.detail}</pre>
+            </Paragraph>
+          );
+        },
+      }}
+    />
   );
 };
 

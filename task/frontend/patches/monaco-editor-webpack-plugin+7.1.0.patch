@@ -1,0 +1,13 @@
+diff --git a/node_modules/monaco-editor-webpack-plugin/out/index.js b/node_modules/monaco-editor-webpack-plugin/out/index.js
+index 2e61d97..1216d87 100644
+--- a/node_modules/monaco-editor-webpack-plugin/out/index.js
++++ b/node_modules/monaco-editor-webpack-plugin/out/index.js
+@@ -174,7 +174,7 @@ function createLoaderRules(languages, features, workers, filename, monacoEditorP
+               if(/^(\\/\\/)/.test(result)) {
+                 result = window.location.protocol + result
+               }
+-              var js = '/*' + label + '*/importScripts("' + result + '");';
++              var js = '/*' + label + '*/' + 'import "' + result + '";';
+               var blob = new Blob([js], { type: 'application/javascript' });
+               return URL.createObjectURL(blob);
+             }

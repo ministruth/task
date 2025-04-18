@@ -1,9 +1,4 @@
-use actix_cloud::async_trait;
-use sea_orm_migration::{MigrationTrait, SchemaManager};
-use skynet_api::sea_orm::{
-    DbErr, DeriveMigrationName,
-    sea_query::{self, ColumnDef, Iden, Table},
-};
+use sea_orm_migration::prelude::*;
 
 use super::migrator::table_prefix;
 
@@ -23,7 +18,7 @@ enum Tasks {
 #[derive(DeriveMigrationName)]
 pub struct Migration;
 
-#[async_trait]
+#[async_trait::async_trait]
 impl MigrationTrait for Migration {
     async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
@@ -37,7 +32,7 @@ impl MigrationTrait for Migration {
                             .not_null()
                             .primary_key(),
                     )
-                    .col(ColumnDef::new(Tasks::Name).string_len(64).not_null())
+                    .col(ColumnDef::new(Tasks::Name).string_len(32).not_null())
                     .col(ColumnDef::new(Tasks::Detail).string_len(1024))
                     .col(ColumnDef::new(Tasks::Output).string())
                     .col(ColumnDef::new(Tasks::Result).integer())

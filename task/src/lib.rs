@@ -9,7 +9,7 @@ use actix_cloud::{
     memorydb,
     router::CSRFType,
     state::{GlobalState, ServerHandle},
-    tokio::runtime::Runtime,
+    tokio,
 };
 use dashmap::DashMap;
 use migration::migrator::Migrator;
@@ -19,11 +19,12 @@ use skynet_api::{
     ffi_rpc::{
         self,
         abi_stable::prefix_type::PrefixTypeTrait,
-        async_ffi, async_trait, bincode,
+        async_ffi, async_trait,
         ffi_rpc_macro::{
             plugin_impl_call, plugin_impl_instance, plugin_impl_root, plugin_impl_trait,
         },
         registry::Registry,
+        rmp_serde,
     },
     permission::{PERM_READ, PERM_WRITE, PermChecker},
     plugin::{PluginStatus, Request, Response},
@@ -46,8 +47,8 @@ include!(concat!(env!("OUT_DIR"), "/response.rs"));
     cb: Default::default(),
     db: Default::default(),
     state: Default::default(),
-    runtime: Runtime::new().unwrap(),
     manage_id: Default::default(),
+    script_handle: Default::default(),
 })]
 #[plugin_impl_root]
 #[plugin_impl_call(skynet_api::plugin::api::PluginApi, skynet_api_task::Service)]
@@ -55,8 +56,8 @@ struct Plugin {
     cb: DashMap<HyUuid, String>,
     db: OnceLock<DatabaseConnection>,
     state: OnceLock<Data<GlobalState>>,
-    runtime: Runtime,
     manage_id: OnceLock<HyUuid>,
+    script_handle: DashMap<HyUuid, bool>,
 }
 
 #[plugin_impl_trait]
@@ -67,48 +68,46 @@ impl skynet_api::plugin::api::PluginApi for Plugin {
         mut skynet: Skynet,
         _runtime_path: PathBuf,
     ) -> SResult<Skynet> {
-        self.runtime.block_on(async {
-            let server: Service = reg.get(SKYNET_SERVICE).unwrap().into();
-            skynet.logger.plugin_start(server);
+        let server: Service = reg.get(SKYNET_SERVICE).unwrap().into();
+        skynet.logger.plugin_start(server);
 
-            let db = skynet.get_db().await?;
-            Migrator::up(&db, None).await?;
-            let _ = self.db.set(db);
+        let db = skynet.get_db().await?;
+        Migrator::up(&db, None).await?;
+        let _ = self.db.set(db);
 
-            let tx = self.db.get().unwrap().begin().await?;
-            let _ = self.manage_id.set(
-                PermissionViewer::find_or_init(&tx, &format!("manage.{ID}"), "plugin task manager")
-                    .await?
-                    .id,
-            );
-            tx.commit().await?;
+        let tx = self.db.get().unwrap().begin().await?;
+        let _ = self.manage_id.set(
+            PermissionViewer::find_or_init(&tx, &format!("manage.{ID}"), "plugin task manager")
+                .await?
+                .id,
+        );
+        tx.commit().await?;
 
-            TaskViewer::clean_running(self.db.get().unwrap()).await?;
+        TaskViewer::clean_running(self.db.get().unwrap()).await?;
 
-            let _ = skynet.insert_menu(
-                MenuItem {
-                    id: HyUuid(uuid!("ee689b2e-beaa-43ac-837d-466cad5ff999")),
-                    plugin: Some(ID),
-                    name: String::from("menu.task"),
-                    path: format!("/plugin/{ID}/"),
-                    checker: PermChecker::new_entry(*self.manage_id.get().unwrap(), PERM_READ),
-                    ..Default::default()
-                },
-                1,
-                Some(HyUuid(uuid!("d00d36d0-6068-4447-ab04-f82ce893c04e"))),
-            );
-            let locale = Locale::new(skynet.config.lang.clone()).add_locale(i18n!("locales"));
-            let state = GlobalState {
-                memorydb: Arc::new(memorydb::default::DefaultBackend::new()),
-                config: Default::default(),
-                logger: None,
-                locale,
-                server: ServerHandle::default(),
-            }
-            .build();
-            let _ = self.state.set(state);
-            Ok(skynet)
-        })
+        let _ = skynet.insert_menu(
+            MenuItem {
+                id: HyUuid(uuid!("ee689b2e-beaa-43ac-837d-466cad5ff999")),
+                plugin: Some(ID),
+                name: String::from("menu.task"),
+                path: format!("/plugin/{ID}/"),
+                checker: PermChecker::new_entry(*self.manage_id.get().unwrap(), PERM_READ),
+                ..Default::default()
+            },
+            1,
+            Some(HyUuid(uuid!("d00d36d0-6068-4447-ab04-f82ce893c04e"))),
+        );
+        let locale = Locale::new(skynet.config.lang.clone()).add_locale(i18n!("locales"));
+        let state = GlobalState {
+            memorydb: Arc::new(memorydb::default::DefaultBackend::new()),
+            config: Default::default(),
+            logger: None,
+            locale,
+            server: ServerHandle::default(),
+        }
+        .build();
+        let _ = self.state.set(state);
+        Ok(skynet)
     }
 
     async fn on_register(&self, _: &Registry, _skynet: Skynet, mut r: Vec<Router>) -> Vec<Router> {
@@ -117,7 +116,7 @@ impl skynet_api::plugin::api::PluginApi for Plugin {
             Router {
                 path: format!("/plugins/{ID}/tasks"),
                 method: Method::Get,
-                route: RouterType::Http(ID, String::from("api::get_all")),
+                route: RouterType::Http(ID, String::from("api::get_tasks")),
                 checker: PermChecker::new_entry(manage_id, PERM_READ),
                 csrf: CSRFType::Header,
             },
@@ -142,19 +141,73 @@ impl skynet_api::plugin::api::PluginApi for Plugin {
                 checker: PermChecker::new_entry(manage_id, PERM_WRITE),
                 csrf: CSRFType::Header,
             },
+            Router {
+                path: format!("/plugins/{ID}/scripts"),
+                method: Method::Get,
+                route: RouterType::Http(ID, String::from("api::get_scripts")),
+                checker: PermChecker::new_entry(manage_id, PERM_READ),
+                csrf: CSRFType::Header,
+            },
+            Router {
+                path: format!("/plugins/{ID}/scripts/{{sid}}"),
+                method: Method::Get,
+                route: RouterType::Http(ID, String::from("api::get_script")),
+                checker: PermChecker::new_entry(manage_id, PERM_READ),
+                csrf: CSRFType::Header,
+            },
+            Router {
+                path: format!("/plugins/{ID}/scripts"),
+                method: Method::Post,
+                route: RouterType::Http(ID, String::from("api::add_script")),
+                checker: PermChecker::new_entry(manage_id, PERM_WRITE),
+                csrf: CSRFType::Header,
+            },
+            Router {
+                path: format!("/plugins/{ID}/scripts/{{sid}}"),
+                method: Method::Put,
+                route: RouterType::Http(ID, String::from("api::put_script")),
+                checker: PermChecker::new_entry(manage_id, PERM_WRITE),
+                csrf: CSRFType::Header,
+            },
+            Router {
+                path: format!("/plugins/{ID}/scripts"),
+                method: Method::Delete,
+                route: RouterType::Http(ID, String::from("api::delete_script_batch")),
+                checker: PermChecker::new_entry(manage_id, PERM_WRITE),
+                csrf: CSRFType::Header,
+            },
+            Router {
+                path: format!("/plugins/{ID}/scripts/{{sid}}"),
+                method: Method::Delete,
+                route: RouterType::Http(ID, String::from("api::delete_script")),
+                checker: PermChecker::new_entry(manage_id, PERM_WRITE),
+                csrf: CSRFType::Header,
+            },
+            Router {
+                path: format!("/plugins/{ID}/scripts/{{sid}}/run"),
+                method: Method::Post,
+                route: RouterType::Http(ID, String::from("api::run_script")),
+                checker: PermChecker::new_entry(manage_id, PERM_WRITE),
+                csrf: CSRFType::Header,
+            },
         ]);
         r
     }
 
     async fn on_route(&self, reg: &Registry, name: String, req: Request) -> SResult<Response> {
-        self.runtime.block_on(async {
-            route!(reg, self.state.get().unwrap().clone(), name, req,
-                "api::get_all" => api::get_all,
-                "api::delete_completed" => api::delete_completed,
-                "api::get_output" => api::get_output,
-                "api::stop" => api::stop,
-            )
-        })
+        route!(reg, self.state.get().unwrap(), name, req,
+            "api::get_tasks" => api::get_tasks,
+            "api::delete_completed" => api::delete_completed,
+            "api::get_output" => api::get_output,
+            "api::stop" => api::stop,
+            "api::get_scripts" => api::get_scripts,
+            "api::get_script" => api::get_script,
+            "api::add_script" => api::add_script,
+            "api::put_script" => api::put_script,
+            "api::delete_script_batch" => api::delete_script_batch,
+            "api::delete_script" => api::delete_script,
+            "api::run_script" => api::run_script,
+        )
     }
 
     async fn on_translate(&self, _: &Registry, str: String, lang: String) -> String {

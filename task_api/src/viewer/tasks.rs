@@ -4,7 +4,7 @@ use skynet_api::{
     request::Condition,
     sea_orm::{
         self, ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseTransaction, EntityTrait,
-        PaginatorTrait, QueryFilter, Set, Unchanged, prelude::Expr,
+        IntoActiveModel, PaginatorTrait, QueryFilter, Set, Unchanged, prelude::Expr,
     },
 };
 use skynet_macro::default_viewer;
@@ -15,6 +15,20 @@ pub struct TaskViewer;
 
 #[default_viewer(tasks)]
 impl TaskViewer {
+    pub async fn create<C>(db: &C, name: &str, detail: &Option<String>) -> Result<tasks::Model>
+    where
+        C: ConnectionTrait,
+    {
+        tasks::ActiveModel {
+            name: Set(name.to_owned()),
+            detail: Set(detail.to_owned()),
+            ..Default::default()
+        }
+        .insert(db)
+        .await
+        .map_err(Into::into)
+    }
+
     /// Update task `id` with `output` and `percent`.
     pub async fn update(
         db: &DatabaseTransaction,
@@ -27,10 +41,26 @@ impl TaskViewer {
             None => return Ok(false),
         };
         let output = m.output.take().unwrap_or_default() + output;
-        let percent = m.percent.saturating_add(percent.try_into()?);
+        let percent = m.percent.saturating_add(percent.try_into()?).min(100);
         let mut m: tasks::ActiveModel = m.into();
         m.output = Set(Some(output));
         m.percent = Set(percent);
+        m.update(db).await?;
+        Ok(true)
+    }
+
+    pub async fn finish_out<C>(db: &C, id: &HyUuid, result: i32, output: &str) -> Result<bool>
+    where
+        C: ConnectionTrait,
+    {
+        let mut m = match Self::find_by_id(db, id).await? {
+            Some(x) => x,
+            None => return Ok(false),
+        };
+        let output = m.output.take().unwrap_or_default() + output;
+        let mut m = m.into_active_model();
+        m.result = Set(Some(result));
+        m.output = Set(Some(output));
         m.update(db).await?;
         Ok(true)
     }

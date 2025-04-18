@@ -29,6 +29,7 @@ const TaskTerminal: React.FC<TaskOutputProps> = (props) => {
     });
     let data = msg.data;
     pos.current = data.pos;
+    data.output = data.output.replace(/(?<!\r)\n/g, '\r\n');
     term.current.write(data.output);
     setTime(Date.now());
   };
