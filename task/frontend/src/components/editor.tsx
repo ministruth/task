@@ -1,5 +1,5 @@
 import TableOp from '@/common/components/layout/table/opBtn';
-import { API_PREFIX } from '@/config';
+import { API_PREFIX, PLUGIN_ID } from '@/config';
 import { checkPerm, getAPI, getIntl, UserPerm } from '@/utils';
 import { ParamsType, ProFormColumnsType } from '@ant-design/pro-components';
 import { useModel } from '@umijs/max';
@@ -62,11 +62,7 @@ const TaskEditor: React.FC<TaskEditorProps> = (props: TaskEditorProps) => {
       },
     },
   ];
-  const disable = !checkPerm(
-    access,
-    'manage.4adaf7d3-b877-43c3-82bd-da3689dc3920',
-    UserPerm.PermWrite,
-  );
+  const disable = !checkPerm(access, `manage.${PLUGIN_ID}`, UserPerm.PermWrite);
 
   return (
     <TableOp

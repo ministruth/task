@@ -8,7 +8,7 @@ import {
 } from '@/common_components/layout/table/column';
 import styles from '@/common_components/layout/table/style.less';
 import TableBtn from '@/common_components/layout/table/tableBtn';
-import { API_PREFIX } from '@/config';
+import { API_PREFIX, PLUGIN_ID } from '@/config';
 import {
   checkPerm,
   deleleAPI,
@@ -160,7 +160,7 @@ const TaskCard = () => {
             tip={intl.get('pages.task.stop.tip')}
             color="#ff4d4f"
             perm={UserPerm.PermWrite}
-            permName="manage.4adaf7d3-b877-43c3-82bd-da3689dc3920"
+            permName={`view.${PLUGIN_ID}`}
             onClick={() => handleStop(intl, ref, row.id, row.name)}
             disabled={row.result != undefined}
           />,
@@ -181,13 +181,7 @@ const TaskCard = () => {
           key="delete"
           danger
           onClick={() => handleDeleteAll(intl, ref)}
-          disabled={
-            !checkPerm(
-              access,
-              'manage.4adaf7d3-b877-43c3-82bd-da3689dc3920',
-              UserPerm.PermWrite,
-            )
-          }
+          disabled={!checkPerm(access, `view.${PLUGIN_ID}`, UserPerm.PermWrite)}
         >
           <FormattedMessage id="app.op.deleteall" />
         </Button>,

@@ -137,11 +137,10 @@ impl skynet_api_task::Service for Plugin {
         self.script_handle.insert(id, false);
         runtime::Handle::current().spawn_blocking(move || {
             let mut engine = Engine::new();
-            let _id = id.clone();
             engine.register_fn(
                 "task_update",
                 move |output: &str, percent: i64| -> Result<(), Box<EvalAltResult>> {
-                    if PLUGIN_INSTANCE.is_script_aborted(&_id) {
+                    if PLUGIN_INSTANCE.is_script_aborted(&id) {
                         return Err(EvalAltResult::ErrorTerminated(
                             "Aborted".into(),
                             Position::NONE,
@@ -152,14 +151,13 @@ impl skynet_api_task::Service for Plugin {
                     runtime::Handle::current()
                         .block_on(async {
                             let tx = PLUGIN_INSTANCE.db.get().unwrap().begin().await?;
-                            TaskViewer::update(&tx, &_id, &output, percent as u32).await?;
+                            TaskViewer::update(&tx, &id, &output, percent as u32).await?;
                             tx.commit().await?;
                             Ok(())
                         })
                         .map_err(|x: anyhow::Error| x.to_string().into())
                 },
             );
-            let _id = id.clone();
             let _r = r.clone();
             engine.register_fn(
                 "api_call",
@@ -167,7 +165,7 @@ impl skynet_api_task::Service for Plugin {
                       name: &str,
                       param: rhai::Map|
                       -> Result<rhai::Map, Box<EvalAltResult>> {
-                    if PLUGIN_INSTANCE.is_script_aborted(&_id) {
+                    if PLUGIN_INSTANCE.is_script_aborted(&id) {
                         return Err(EvalAltResult::ErrorTerminated(
                             "Aborted".into(),
                             Position::NONE,
@@ -184,7 +182,7 @@ impl skynet_api_task::Service for Plugin {
                             })
                             .map_err(|x: anyhow::Error| x.to_string().into())
                     } else {
-                        return Err("Plugin ID not exist".into());
+                        Err("Plugin ID not exist".into())
                     }
                 },
             );

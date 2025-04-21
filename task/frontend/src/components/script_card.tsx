@@ -8,7 +8,7 @@ import {
 } from '@/common_components/layout/table/column';
 import styles from '@/common_components/layout/table/style.less';
 import TableBtn from '@/common_components/layout/table/tableBtn';
-import { API_PREFIX } from '@/config';
+import { API_PREFIX, PLUGIN_ID } from '@/config';
 import {
   checkAPI,
   deleleAPI,
@@ -127,7 +127,7 @@ const ScriptCard = () => {
             icon={CaretRightOutlined}
             tip={intl.get('pages.script.op.run')}
             perm={UserPerm.PermWrite}
-            permName="manage.4adaf7d3-b877-43c3-82bd-da3689dc3920"
+            permName={`manage.${PLUGIN_ID}`}
             onClick={() => handleRun(row.id)}
           />,
           <TaskEditor
@@ -151,7 +151,7 @@ const ScriptCard = () => {
             tip={intl.get('app.op.delete')}
             color="#ff4d4f"
             perm={UserPerm.PermWrite}
-            permName="manage.4adaf7d3-b877-43c3-82bd-da3689dc3920"
+            permName={`manage.${PLUGIN_ID}`}
             onClick={() => handleDelete(intl, ref, row.id, row.name)}
           />,
         ];

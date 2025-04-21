@@ -1,3 +1,14 @@
+# frontend-v0.1.5
+## Changes
+1. Split task and script frontend.
+
+# v0.7.1
+## Bug fix
+1. Fix database error.
+
+## Changes
+1. Split task and script frontend.
+
 # frontend-v0.1.4
 ## New features
 1. Task script support.

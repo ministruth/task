@@ -47,6 +47,7 @@ include!(concat!(env!("OUT_DIR"), "/response.rs"));
     cb: Default::default(),
     db: Default::default(),
     state: Default::default(),
+    view_id: Default::default(),
     manage_id: Default::default(),
     script_handle: Default::default(),
 })]
@@ -56,6 +57,7 @@ struct Plugin {
     cb: DashMap<HyUuid, String>,
     db: OnceLock<DatabaseConnection>,
     state: OnceLock<Data<GlobalState>>,
+    view_id: OnceLock<HyUuid>,
     manage_id: OnceLock<HyUuid>,
     script_handle: DashMap<HyUuid, bool>,
 }
@@ -76,6 +78,11 @@ impl skynet_api::plugin::api::PluginApi for Plugin {
         let _ = self.db.set(db);
 
         let tx = self.db.get().unwrap().begin().await?;
+        let _ = self.view_id.set(
+            PermissionViewer::find_or_init(&tx, &format!("view.{ID}"), "plugin task viewer")
+                .await?
+                .id,
+        );
         let _ = self.manage_id.set(
             PermissionViewer::find_or_init(&tx, &format!("manage.{ID}"), "plugin task manager")
                 .await?
@@ -90,12 +97,24 @@ impl skynet_api::plugin::api::PluginApi for Plugin {
                 id: HyUuid(uuid!("ee689b2e-beaa-43ac-837d-466cad5ff999")),
                 plugin: Some(ID),
                 name: String::from("menu.task"),
-                path: format!("/plugin/{ID}/"),
+                path: format!("/plugin/{ID}/task"),
+                checker: PermChecker::new_entry(*self.view_id.get().unwrap(), PERM_READ),
+                ..Default::default()
+            },
+            0,
+            Some(HyUuid(uuid!("d00d36d0-6068-4447-ab04-f82ce893c04e"))),
+        );
+        let _ = skynet.insert_menu(
+            MenuItem {
+                id: HyUuid(uuid!("f046860e-ebf7-48e8-b4ff-151fc4e19b6e")),
+                plugin: Some(ID),
+                name: String::from("menu.task"),
+                path: format!("/plugin/{ID}/script"),
                 checker: PermChecker::new_entry(*self.manage_id.get().unwrap(), PERM_READ),
                 ..Default::default()
             },
             1,
-            Some(HyUuid(uuid!("d00d36d0-6068-4447-ab04-f82ce893c04e"))),
+            Some(HyUuid(uuid!("cca5b3b0-40a3-465c-8b08-91f3e8d3b14d"))),
         );
         let locale = Locale::new(skynet.config.lang.clone()).add_locale(i18n!("locales"));
         let state = GlobalState {
@@ -111,34 +130,35 @@ impl skynet_api::plugin::api::PluginApi for Plugin {
     }
 
     async fn on_register(&self, _: &Registry, _skynet: Skynet, mut r: Vec<Router>) -> Vec<Router> {
+        let view_id = *self.view_id.get().unwrap();
         let manage_id = *self.manage_id.get().unwrap();
         r.extend(vec![
             Router {
                 path: format!("/plugins/{ID}/tasks"),
                 method: Method::Get,
                 route: RouterType::Http(ID, String::from("api::get_tasks")),
-                checker: PermChecker::new_entry(manage_id, PERM_READ),
+                checker: PermChecker::new_entry(view_id, PERM_READ),
                 csrf: CSRFType::Header,
             },
             Router {
                 path: format!("/plugins/{ID}/tasks"),
                 method: Method::Delete,
                 route: RouterType::Http(ID, String::from("api::delete_completed")),
-                checker: PermChecker::new_entry(manage_id, PERM_WRITE),
+                checker: PermChecker::new_entry(view_id, PERM_WRITE),
                 csrf: CSRFType::Header,
             },
             Router {
                 path: format!("/plugins/{ID}/tasks/{{tid}}/output"),
                 method: Method::Get,
                 route: RouterType::Http(ID, String::from("api::get_output")),
-                checker: PermChecker::new_entry(manage_id, PERM_READ),
+                checker: PermChecker::new_entry(view_id, PERM_READ),
                 csrf: CSRFType::Header,
             },
             Router {
                 path: format!("/plugins/{ID}/tasks/{{tid}}/stop"),
                 method: Method::Post,
                 route: RouterType::Http(ID, String::from("api::stop")),
-                checker: PermChecker::new_entry(manage_id, PERM_WRITE),
+                checker: PermChecker::new_entry(view_id, PERM_WRITE),
                 csrf: CSRFType::Header,
             },
             Router {

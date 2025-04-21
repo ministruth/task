@@ -1,6 +1,6 @@
 use sea_orm_migration::prelude::*;
 
-use super::migrator::table_prefix;
+use super::{m20250301_000001_create_table::Scripts, migrator::table_prefix};
 
 #[derive(Iden)]
 enum Tasks {
@@ -11,6 +11,7 @@ enum Tasks {
     Output,
     Result,
     Percent,
+    Sid,
     CreatedAt,
     UpdatedAt,
 }
@@ -42,8 +43,16 @@ impl MigrationTrait for Migration {
                             .default(0)
                             .not_null(),
                     )
+                    .col(ColumnDef::new(Tasks::Sid).char_len(36))
                     .col(ColumnDef::new(Tasks::CreatedAt).big_integer().not_null())
                     .col(ColumnDef::new(Tasks::UpdatedAt).big_integer().not_null())
+                    .foreign_key(
+                        ForeignKey::create()
+                            .to(table_prefix(&Scripts::Table), Scripts::ID)
+                            .from_col(Tasks::Sid)
+                            .on_update(ForeignKeyAction::Restrict)
+                            .on_delete(ForeignKeyAction::Cascade),
+                    )
                     .to_owned(),
             )
             .await?;

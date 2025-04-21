@@ -1,6 +1,6 @@
 {
   "name": "skynet-task",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "private": true,
   "description": "This plugin provide task support for skynet.",
   "author": "MXWXZ <me@imwxz.com>",
