@@ -1,3 +1,7 @@
+# v0.7.2
+## Bug fix
+1. Fix database error.
+
 # frontend-v0.1.5
 ## Changes
 1. Split task and script frontend.
